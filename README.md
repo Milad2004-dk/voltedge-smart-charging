@@ -1,11 +1,19 @@
 # VoltEdge Smart Charging API
 
-REST-microservice der beregner en **optimal ladeplan** for en elbil: hvornaar og
-med hvor meget effekt der skal lades, saa maalet naas inden deadline, til lavest
-mulige pris, uden at overskride ladestanderens og nettets belastningsgraenser.
+REST-microservice der beregner en **optimal ladeplan** for en elbil: hvornår og med hvor meget effekt der skal lades, så målet nås inden deadline, til lavest mulige pris, uden at overskride ladestanderens og nettets belastningsgrænser.
 
-Dette er kernen i VoltEdges "smart charging" - bygget som teknisk MVP til 6.2
-semestereksamen (KEA).
+Dette er kernen i VoltEdges "smart charging" — bygget som teknisk MVP til 6.2-semestereksamen (KEA).
+
+## Hvad løsningen gør
+
+Givet et energimål, et tidsvindue, ladestanderens og sitets effektgrænse samt elprisen time for time, finder optimeringsmotoren de billigste timer at lade i og lægger en plan, der rammer målet uden at overskride grænserne. En plan kan oprettes, hentes, justeres (ved nyt prissignal) og afsluttes.
+
+## Tech stack
+
+- Python + FastAPI (REST-API med automatisk Swagger-dokumentation)
+- MySQL (rå `mysql.connector`)
+- Docker + docker-compose (API og database som én samlet enhed)
+- GitHub Actions (CI/CD) → Azure VM
 
 ## Filer
 
@@ -15,7 +23,9 @@ semestereksamen (KEA).
 | `database.py` | Gem/hent i MySQL (rå SQL) |
 | `main.py` | FastAPI-endpoints |
 | `init.sql` | Databaseskema (2 tabeller) |
-| `test_app.py` | Tests af domaenelogikken |
+| `test_app.py` | Tests af domænelogikken |
+| `Dockerfile`, `docker-compose.yml` | Container-opsætning (API + database) |
+| `.github/workflows/ci-cd.yml` | CI/CD: build, test og deploy |
 
 ## DDD i koden
 
@@ -25,56 +35,29 @@ semestereksamen (KEA).
 | Entity | `ChargingProfile` |
 | Value objects | `TimeWindow`, `PowerLevel`, `ChargingTarget`, `LoadConstraint`, `PriceSignal` |
 | Domain service | `ChargingPlanOptimizer` |
-| Domain events | `ChargingPlanCreated`, `ChargingPlanCompleted` |
-
-## API-endpoints
-
-| Metode | Endpoint | Beskrivelse |
-|---|---|---|
-| POST | `/charging-plans` | Beregn en optimal ladeplan |
-| GET | `/charging-plans` | Hent alle ladeplaner |
-| GET | `/charging-plans/{id}` | Hent én ladeplan |
-| POST | `/charging-plans/{id}/complete` | Afslut ladning |
-| GET | `/health` | Health check |
-| GET | `/docs` | Swagger UI (auto-genereret) |
+| Domain events | `ChargingPlanCreated`, `ChargingPlanAdjusted`, `ChargingPlanCompleted` |
 
 ## Kør lokalt
 
-```bash
-docker compose up --build
-# API:     http://localhost:8000
-# Swagger: http://localhost:8000/docs
-```
+Kræver Docker Desktop.
 
-Kør tests:
+Åbn derefter Swagger-dokumentationen på http://localhost:8000/docs
 
-```bash
-pip install -r requirements-dev.txt
-pytest -v
-ruff check .
-```
+## API-endpoints
 
-## Eksempel-request
+| Metode | Sti | Funktion |
+|---|---|---|
+| GET | `/health` | Sundhedstjek |
+| GET | `/charging-plans` | Hent alle planer |
+| POST | `/charging-plans` | Opret en plan (kører optimeringen) |
+| GET | `/charging-plans/{plan_id}` | Hent én plan |
+| POST | `/charging-plans/{plan_id}/adjust` | Genberegn planen ved nyt prissignal |
+| POST | `/charging-plans/{plan_id}/complete` | Afslut en plan |
 
-```json
-POST /charging-plans
-{
-  "session_id": "session-001",
-  "target_energy_kwh": 40,
-  "deadline": "2026-05-23T07:00:00",
-  "window_start": "2026-05-22T18:00:00",
-  "window_end": "2026-05-23T07:00:00",
-  "charger_max_power_kw": 11,
-  "site_load_limit_kw": 11,
-  "prices": [
-    {"start": "2026-05-22T18:00:00", "price_per_kwh": 3.0},
-    {"start": "2026-05-23T00:00:00", "price_per_kwh": 0.5}
-  ]
-}
-```
+## Tests
 
-## Teknologi
+Testene dækker domænelogikken og kræver ingen database.
 
-Python / FastAPI, MySQL, Docker + docker-compose, GitHub Actions (CI/CD).
+## CI/CD og deployment
 
-Se `GUIDE.md` for trin-for-trin opsaetning af GitHub, Azure VM og MySQL.
+Ved hvert push og pull request til `main` kører GitHub Actions automatisk: build af Docker-image, `ruff` (lint), `pytest` og en database-smoketest. Ved push til `main` deployes løsningen automatisk til en Azure VM via SSH og startes med docker-compose.
