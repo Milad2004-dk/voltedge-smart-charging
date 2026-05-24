@@ -7,7 +7,8 @@ services:
       MYSQL_USER: voltedge
       MYSQL_PASSWORD: voltedge
       MYSQL_ROOT_PASSWORD: rootpw
-  
+    ports:
+      - "3307:3306"
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - dbdata:/var/lib/mysql
