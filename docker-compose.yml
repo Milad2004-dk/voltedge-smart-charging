@@ -1,0 +1,34 @@
+# En microservice = API + database, bygget og koert som én samlet enhed.
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: voltedge
+      MYSQL_USER: voltedge
+      MYSQL_PASSWORD: voltedge
+      MYSQL_ROOT_PASSWORD: rootpw
+  
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uvoltedge", "-pvoltedge"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  api:
+    build: .
+    environment:
+      DB_HOST: db
+      DB_USER: voltedge
+      DB_PASSWORD: voltedge
+      DB_NAME: voltedge
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  dbdata:

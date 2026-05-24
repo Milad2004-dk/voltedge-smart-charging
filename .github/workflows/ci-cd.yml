@@ -1,0 +1,62 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ---- CI: lint + test + database-provisionering ----
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: voltedge
+          MYSQL_USER: voltedge
+          MYSQL_PASSWORD: voltedge
+          MYSQL_ROOT_PASSWORD: rootpw
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uvoltedge -pvoltedge"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Installer afhaengigheder
+        run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Kør tests
+        run: pytest -v
+      - name: DB smoke-test (opret skema i MySQL)
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USER: voltedge
+          DB_PASSWORD: voltedge
+          DB_NAME: voltedge
+        run: python -c "import database; database.init_db(); print('DB-skema oprettet')"
+
+  # ---- CD: deploy kun naar CI er groen og der pushes til main ----
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy via SSH til Azure VM
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          password: ${{ secrets.VM_PASSWORD }}
+          script: |
+            cd /home/${{ secrets.VM_USER }}/voltedge-smart-charging
+            git pull
+            docker compose up -d --build
+            echo "Deployet"
