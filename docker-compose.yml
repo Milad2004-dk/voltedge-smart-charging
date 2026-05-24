@@ -2,6 +2,7 @@
 services:
   db:
     image: mysql:8.0
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: voltedge
       MYSQL_USER: voltedge
@@ -20,6 +21,7 @@ services:
 
   api:
     build: .
+    restart: unless-stopped
     environment:
       DB_HOST: db
       DB_USER: voltedge
