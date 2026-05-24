@@ -1,4 +1,4 @@
-"""Databaselag - rå SQL med mysql.connector (samme tilgang som del 2).
+"""Databaselag - raa SQL med mysql.connector (samme tilgang som del 2).
 
 Her gemmes og hentes ChargingPlan-aggregatet i to tabeller:
   charging_plans (1) ---< charging_plan_slots (mange)
@@ -83,13 +83,24 @@ def save_plan(plan):
 
 
 def update_plan(plan):
-    """Gem aendringer (fx efter complete)."""
+    """Gem aendringer (fx efter complete eller adjust)."""
     conn = get_db()
     cur = conn.cursor()
     cur.execute(
-        "UPDATE charging_plans SET status=%s, delivered_energy_kwh=%s WHERE plan_id=%s",
-        (plan.status, plan.delivered_energy_kwh, plan.plan_id),
+        """UPDATE charging_plans
+           SET status=%s, estimated_cost=%s, delivered_energy_kwh=%s
+           WHERE plan_id=%s""",
+        (plan.status, plan.profile.estimated_cost,
+         plan.delivered_energy_kwh, plan.plan_id),
     )
+    # Skriv tidsslots paa ny - en justeret plan har et nyt skema
+    cur.execute("DELETE FROM charging_plan_slots WHERE plan_id=%s", (plan.plan_id,))
+    for s in plan.profile.slots:
+        cur.execute(
+            """INSERT INTO charging_plan_slots (plan_id, slot_start, slot_end, power_kw)
+               VALUES (%s, %s, %s, %s)""",
+            (plan.plan_id, s.start, s.end, s.power_kw),
+        )
     conn.commit()
     cur.close()
     conn.close()

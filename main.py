@@ -50,6 +50,10 @@ class CompleteIn(BaseModel):
     delivered_energy_kwh: float
 
 
+class AdjustIn(BaseModel):
+    prices: list[PricePointIn]
+
+
 # ----------------------------- Hjaelpefunktion ---------------------------
 
 def plan_to_dict(plan):
@@ -119,4 +123,24 @@ def complete_plan(plan_id: str, req: CompleteIn):
         raise HTTPException(status_code=404, detail="Ladeplan ikke fundet")
     plan.complete(req.delivered_energy_kwh)
     database.update_plan(plan)
+    return plan_to_dict(plan)
+
+
+@app.post("/charging-plans/{plan_id}/adjust")
+def adjust_plan(plan_id: str, req: AdjustIn):
+    plan = database.get_plan(plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Ladeplan ikke fundet")
+    price_signal = domain.PriceSignal([(p.start, p.price_per_kwh) for p in req.prices])
+    try:
+        new_profile = optimizer.optimize(
+            plan.target, plan.window, plan.constraint,
+            plan.charger_max_power_kw, price_signal,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    plan.adjust(new_profile)
+    database.update_plan(plan)
+    logger.info("Plan justeret: %s (events: %s)", plan.plan_id,
+                [type(e).__name__ for e in plan.events])
     return plan_to_dict(plan)

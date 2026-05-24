@@ -31,7 +31,7 @@ def test_optimizer_charges_in_cheapest_hours():
     profile = domain.ChargingPlanOptimizer().optimize(
         target, window, domain.LoadConstraint(11.0), 11.0, _price_signal(window)
     )
-    # 40 kWh kan lades om natten til 0,5 DKG/kWh => 20 DKK
+    # 40 kWh kan lades om natten til 0,5 DKK/kWh => 20 DKK
     assert profile.estimated_cost == 20.0
     assert profile.total_energy_kwh == 40.0
     assert profile.peak_power_kw <= 11.0
@@ -81,3 +81,25 @@ def test_aggregate_create_and_complete():
     assert any(isinstance(e, domain.ChargingPlanCompleted) for e in plan.events)
     with pytest.raises(ValueError):
         plan.complete(10.0)
+
+
+def test_aggregate_adjust_raises_event():
+    window, target = _scenario()
+    opt = domain.ChargingPlanOptimizer()
+    profile = opt.optimize(
+        target, window, domain.LoadConstraint(11.0), 11.0, _price_signal(window)
+    )
+    plan = domain.ChargingPlan.create("s1", target, window,
+                                      domain.LoadConstraint(11.0), 11.0, profile)
+
+    # Nyt prissignal -> juster planen (genberegnet skema)
+    new_profile = opt.optimize(
+        target, window, domain.LoadConstraint(11.0), 11.0, _price_signal(window)
+    )
+    plan.adjust(new_profile)
+    assert any(isinstance(e, domain.ChargingPlanAdjusted) for e in plan.events)
+
+    # En afsluttet plan kan ikke justeres
+    plan.complete(40.0)
+    with pytest.raises(ValueError):
+        plan.adjust(new_profile)

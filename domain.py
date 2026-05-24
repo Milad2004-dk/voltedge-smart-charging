@@ -4,7 +4,7 @@ Alle DDD-byggeklodser ligger samlet her, saa de er nemme at finde og forklare:
   - Value objects : TimeWindow, PowerLevel, ChargingTarget, LoadConstraint, PriceSignal
   - Entity        : ChargingProfile (det beregnede ladeskema)
   - Aggregate root: ChargingPlan (samler det hele og rejser events)
-  - Domain events : ChargingPlanCreated, ChargingPlanCompleted
+  - Domain events : ChargingPlanCreated, ChargingPlanAdjusted, ChargingPlanCompleted
   - Domain service: ChargingPlanOptimizer (selve smart charging-beregningen)
 
 Value objects er immutable (frozen=True) - de kan ikke aendres efter de er lavet.
@@ -113,6 +113,12 @@ class ChargingPlanCreated:
 
 
 @dataclass
+class ChargingPlanAdjusted:
+    plan_id: str
+    estimated_cost: float
+
+
+@dataclass
 class ChargingPlanCompleted:
     plan_id: str
     delivered_energy_kwh: float
@@ -154,6 +160,15 @@ class ChargingPlan:
         self.delivered_energy_kwh = delivered_energy_kwh
         self.events.append(
             ChargingPlanCompleted(self.plan_id, delivered_energy_kwh)
+        )
+
+    def adjust(self, new_profile):
+        # Genberegnet plan (fx ved nyt prissignal fra Energy & Grid)
+        if self.status != "SCHEDULED":
+            raise ValueError("Kun en planlagt plan kan justeres")
+        self.profile = new_profile
+        self.events.append(
+            ChargingPlanAdjusted(self.plan_id, new_profile.estimated_cost)
         )
 
     @property
@@ -212,6 +227,6 @@ class ChargingPlanOptimizer:
             total_cost += energy * h["price"]
             remaining -= energy
 
-        # 4) Sortér skemaet kronologisk og returnér profilen
+        # 4) Sorter skemaet kronologisk og returner profilen
         chosen.sort(key=lambda s: s.start)
         return ChargingProfile(slots=chosen, estimated_cost=round(total_cost, 2))
