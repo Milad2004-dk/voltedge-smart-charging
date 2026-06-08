@@ -1,6 +1,6 @@
 """FastAPI-app for VoltEdge Smart Charging.
 
-Endpoints kalder domaenet (optimering) og databasen direkte - fladt og enkelt.
+Endpoints kalder domænet (optimering) og databasen direkte - fladt og enkelt.
 """
 
 import logging
