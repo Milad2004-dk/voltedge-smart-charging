@@ -1,4 +1,4 @@
-"""Domaenelaget for Smart Charging.
+"""Domænelaget for Smart Charging.
 
 Alle DDD-byggeklodser ligger samlet her, så de er nemme at finde og forklare:
   - Value objects : TimeWindow, PowerLevel, ChargingTarget, LoadConstraint, PriceSignal
