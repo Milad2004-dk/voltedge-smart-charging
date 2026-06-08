@@ -1,8 +1,8 @@
-"""Databaselag - raa SQL med mysql.connector (samme tilgang som del 2).
+"""Databaselag - rå SQL med mysql.connector (samme tilgang som del 2).
 
 Her gemmes og hentes ChargingPlan-aggregatet i to tabeller:
   charging_plans (1) ---< charging_plan_slots (mange)
-Forbindelsen laeses fra environment variables (sat via GitHub Secrets / compose).
+Forbindelsen læses fra environment variables (sat via GitHub Secrets / compose).
 """
 
 import os
