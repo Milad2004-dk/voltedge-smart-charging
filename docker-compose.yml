@@ -1,4 +1,4 @@
-# En microservice = API + database, bygget og koert som én samlet enhed.
+# En microservice = API + database, bygget og kørt som én samlet enhed.
 services:
   db:
     image: mysql:8.0
