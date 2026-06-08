@@ -1,5 +1,5 @@
--- Databaseskema for Smart Charging. Koeres automatisk af MySQL-containeren
--- foerste gang den starter (ER-diagram i rapportens afsnit 4).
+-- Databaseskema for Smart Charging. Køres automatisk af MySQL-containeren
+-- første gang den starter (ER-diagram i rapportens afsnit 4).
 
 CREATE TABLE IF NOT EXISTS charging_plans (
     plan_id              VARCHAR(36) PRIMARY KEY,
