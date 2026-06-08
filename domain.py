@@ -1,13 +1,13 @@
 """Domaenelaget for Smart Charging.
 
-Alle DDD-byggeklodser ligger samlet her, saa de er nemme at finde og forklare:
+Alle DDD-byggeklodser ligger samlet her, så de er nemme at finde og forklare:
   - Value objects : TimeWindow, PowerLevel, ChargingTarget, LoadConstraint, PriceSignal
   - Entity        : ChargingProfile (det beregnede ladeskema)
   - Aggregate root: ChargingPlan (samler det hele og rejser events)
   - Domain events : ChargingPlanCreated, ChargingPlanAdjusted, ChargingPlanCompleted
   - Domain service: ChargingPlanOptimizer (selve smart charging-beregningen)
 
-Value objects er immutable (frozen=True) - de kan ikke aendres efter de er lavet.
+Value objects er immutable (frozen=True) - de kan ikke ændres efter de er lavet.
 """
 
 import uuid
@@ -89,7 +89,7 @@ class ScheduledSlot:
 
 @dataclass
 class ChargingProfile:
-    """Entity: det beregnede ladeskema (kan aendres ved genberegning)."""
+    """Entity: det beregnede ladeskema (kan ændres ved genberegning)."""
     slots: list  # liste af ScheduledSlot
     estimated_cost: float
     profile_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -127,7 +127,7 @@ class ChargingPlanCompleted:
 # ----------------------------- Aggregate root ----------------------------
 
 class ChargingPlan:
-    """Aggregate root: al aendring af en ladeplan gaar gennem denne klasse."""
+    """Aggregate root: al ændring af en ladeplan går gennem denne klasse."""
 
     def __init__(self, session_id, target, window, constraint,
                  charger_max_power_kw, profile, plan_id=None,
