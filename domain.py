@@ -18,13 +18,13 @@ from datetime import datetime, timedelta
 
 @dataclass(frozen=True)
 class TimeWindow:
-    """Et tidsinterval, fx fra bilen saettes til, til deadline."""
+    """Et tidsinterval, fx fra bilen sættes til, til deadline."""
     start: datetime
     end: datetime
 
     def __post_init__(self):
         if self.start >= self.end:
-            raise ValueError("TimeWindow: start skal vaere foer end")
+            raise ValueError("TimeWindow: start skal være før end")
 
     def hours(self):
         return (self.end - self.start).total_seconds() / 3600
@@ -38,13 +38,13 @@ class PowerLevel:
 
 @dataclass(frozen=True)
 class ChargingTarget:
-    """Kundens maal: hvor meget energi der skal leveres inden en deadline."""
+    """Kundens mål: hvor meget energi der skal leveres inden en deadline."""
     energy_kwh: float
     deadline: datetime
 
     def __post_init__(self):
         if self.energy_kwh <= 0:
-            raise ValueError("ChargingTarget: energy_kwh skal vaere positiv")
+            raise ValueError("ChargingTarget: energy_kwh skal være positiv")
 
 
 @dataclass(frozen=True)
@@ -54,7 +54,7 @@ class LoadConstraint:
 
     def __post_init__(self):
         if self.max_power_kw <= 0:
-            raise ValueError("LoadConstraint: max_power_kw skal vaere positiv")
+            raise ValueError("LoadConstraint: max_power_kw skal være positiv")
 
 
 @dataclass(frozen=True)
@@ -181,13 +181,13 @@ class ChargingPlan:
 class ChargingPlanOptimizer:
     """Domain service: beregner den optimale ladeplan (smart charging).
 
-    Ide: lad i de billigste timer foerst, op til effektloftet, indtil maalet
-    er naaet - uden at overskride ladestanderens og nettets graenser.
+    Ide: lad i de billigste timer først, op til effektloftet, indtil målet
+    er nået - uden at overskride ladestanderens og nettets grænser.
     """
 
     def optimize(self, target, window, constraint,
                  charger_max_power_kw, price_signal):
-        # Effektloftet = det laveste af laderens og sitets graense
+        # Effektloftet = det laveste af laderens og sitets grænse
         ceiling_kw = min(charger_max_power_kw, constraint.max_power_kw)
 
         # 1) Del tidsvinduet op i timer og find prisen for hver time
@@ -208,11 +208,11 @@ class ChargingPlanOptimizer:
             })
             cursor = slot_end
 
-        # 2) Er der nok kapacitet til at naa maalet?
+        # 2) Er der nok kapacitet til at nå målet?
         if sum(h["max_energy"] for h in hours) < target.energy_kwh:
             raise ValueError("Maalet kan ikke naas inden for tidsvinduet")
 
-        # 3) Tag de billigste timer foerst
+        # 3) Tag de billigste timer først
         hours.sort(key=lambda h: h["price"])
 
         remaining = target.energy_kwh
