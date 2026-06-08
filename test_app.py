@@ -1,4 +1,4 @@
-"""Tests for domaenelogikken (kraever ingen database)."""
+"""Tests for domænelogikken (kræver ingen database)."""
 
 from datetime import datetime
 
@@ -8,7 +8,7 @@ import domain
 
 
 def _price_signal(window):
-    """Billig stroem om natten (00-06), dyrt i myldretiden."""
+    """Billig strøm om natten (00-06), dyrt i myldretiden."""
     prices = []
     cursor = window.start
     from datetime import timedelta
