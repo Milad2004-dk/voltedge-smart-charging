@@ -42,7 +42,7 @@ jobs:
           DB_NAME: voltedge
         run: python -c "import database; database.init_db(); print('DB-skema oprettet')"
 
-  # ---- CD: deploy kun naar CI er groen og der pushes til main ----
+  # ---- CD: deploy kun når CI er grøn og der pushes til main ----
   deploy:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
