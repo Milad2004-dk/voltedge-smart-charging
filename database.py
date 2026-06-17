@@ -83,7 +83,7 @@ def save_plan(plan):
 
 
 def update_plan(plan):
-    """Gem aendringer (fx efter complete eller adjust)."""
+    """Gem ændringer (fx efter complete eller adjust)."""
     conn = get_db()
     cur = conn.cursor()
     cur.execute(
@@ -93,7 +93,7 @@ def update_plan(plan):
         (plan.status, plan.profile.estimated_cost,
          plan.delivered_energy_kwh, plan.plan_id),
     )
-    # Skriv tidsslots paa ny - en justeret plan har et nyt skema
+    # Skriv tidsslots på ny - en justeret plan har et nyt skema
     cur.execute("DELETE FROM charging_plan_slots WHERE plan_id=%s", (plan.plan_id,))
     for s in plan.profile.slots:
         cur.execute(
