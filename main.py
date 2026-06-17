@@ -54,7 +54,7 @@ class AdjustIn(BaseModel):
     prices: list[PricePointIn]
 
 
-# ----------------------------- Hjaelpefunktion ---------------------------
+# ----------------------------- Hjælpefunktion ---------------------------
 
 def plan_to_dict(plan):
     return {
