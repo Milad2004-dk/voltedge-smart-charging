@@ -72,7 +72,6 @@ class PriceSignal:
         return None
 
 
-# --------------------------- Entity + skema ------------------------------
 
 @dataclass(frozen=True)
 class ScheduledSlot:
@@ -86,7 +85,7 @@ class ScheduledSlot:
         hours = (self.end - self.start).total_seconds() / 3600
         return round(self.power_kw * hours, 2)
 
-
+# --------------------------- Entity + skema ------------------------------
 @dataclass
 class ChargingProfile:
     """Entity: det beregnede ladeskema (kan ændres ved genberegning)."""
